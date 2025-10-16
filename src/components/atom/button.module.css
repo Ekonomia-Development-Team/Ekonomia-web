@@ -1,0 +1,19 @@
+.rootButton {
+  padding: 0.5rem 1rem;
+  background: #2563eb; /* blue-600 */
+  color: #fff;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: background 200ms ease, transform 150ms ease;
+}
+.rootButton:hover {
+  background: #1e40af; /* blue-800 */
+  transform: translateY(-1px);
+}
+.secondary {
+  background: #16a34a; /* green-600 */
+}
+.secondary:hover {
+  background: #15803d;
+}
