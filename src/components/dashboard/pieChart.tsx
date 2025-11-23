@@ -1,16 +1,44 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
-import VariablePie from "highcharts/modules/variable-pie";
 
-if (typeof VariablePie === "function") VariablePie(Highcharts);
+if (typeof window !== "undefined") {
+  import("highcharts/modules/variable-pie").then((mod) => {
+    const modUnknown = mod as unknown;
+    type VarPieFn = (h: typeof Highcharts) => void;
+    const VariablePie = ((modUnknown as { default?: VarPieFn }).default) ?? (modUnknown as VarPieFn | undefined);
+    if (typeof VariablePie === "function") VariablePie(Highcharts);
+  });
+}
 
 interface PieChartProps {
   title?: string;
   series?: Highcharts.SeriesOptionsType[];
+  apiEndpoint?: string;
 }
 
-const PieChart: React.FC<PieChartProps> = ({ title, series }) => {
+const PieChart: React.FC<PieChartProps> = ({ title, series, apiEndpoint }) => {
+  const [fetchedSeries, setFetchedSeries] = useState<Highcharts.SeriesOptionsType[] | undefined>(series);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      if (!series && apiEndpoint) {
+        try {
+          const res = await fetch(apiEndpoint);
+          if (!res.ok) throw new Error("Failed to fetch chart data");
+          const d = await res.json();
+          if (!cancelled) setFetchedSeries(d);
+        } catch (_err) {
+          if (!cancelled) setFetchedSeries([]);
+        }
+      }
+    }
+    fetchData();
+    return () => { cancelled = true; };
+  }, [series, apiEndpoint]);
   const defaultSeries: Highcharts.SeriesOptionsType[] = [
     {
       type: "variablepie",
@@ -42,7 +70,7 @@ const PieChart: React.FC<PieChartProps> = ({ title, series }) => {
         "Area (square km): <b>{point.y}</b><br/>" +
         "Population density (people per square km): <b>{point.z}</b><br/>",
     },
-    series: series ?? defaultSeries,
+    series: series ?? fetchedSeries ?? defaultSeries,
   };
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;

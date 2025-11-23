@@ -1,9 +1,9 @@
 "use client";
 
 import React from 'react';
-import BarChart from './BarChart';
-import PieChart from './PieChart';
-import LineChart from './LineChart';
+import ColumnChart from './columnChart';
+import PieChart from './pieChart';
+import LineChart from './lineChart';
 
 interface ChartProps {
   type: 'bar' | 'pie' | 'line';
@@ -16,7 +16,7 @@ const DynamicChart: React.FC<ChartProps> = ({ type, title, apiEndpoint }) => {
   
   switch (type) {
     case 'bar':
-      return <BarChart title={title} apiEndpoint={apiEndpoint} />;
+      return <ColumnChart title={title} apiEndpoint={apiEndpoint} />;
     
     case 'pie':
       return <PieChart title={title} apiEndpoint={apiEndpoint} />;

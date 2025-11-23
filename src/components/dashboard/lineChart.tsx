@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import HighchartsReact from "highcharts-react-official";
 
@@ -33,6 +35,7 @@ interface LineChartProps {
   title?: string;
   categories?: string[];
   series?: Highcharts.SeriesOptionsType[];
+  apiEndpoint?: string;
 }
 
 const defaultPayload = {
@@ -53,14 +56,33 @@ const defaultPayload = {
   ],
 } as const;
 
-const LineChart: React.FC<LineChartProps> = ({ title, categories, series }) => {
+const LineChart: React.FC<LineChartProps> = ({ title, categories, series, apiEndpoint }) => {
+  const [fetchedSeries, setFetchedSeries] = useState<Highcharts.SeriesOptionsType[] | undefined>(series);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function fetchData() {
+      if (!series && apiEndpoint) {
+        try {
+          const res = await fetch(apiEndpoint);
+          if (!res.ok) throw new Error("Failed to fetch chart data");
+          const data = await res.json();
+          if (!cancelled) setFetchedSeries(data);
+        } catch (_err) {
+          if (!cancelled) setFetchedSeries([]);
+        }
+      }
+    }
+    fetchData();
+    return () => { cancelled = true; };
+  }, [series, apiEndpoint]);
   const usedCategories = categories ?? defaultPayload.categories;
-  const usedSeries = series ?? (defaultPayload.series as Highcharts.SeriesOptionsType[]);
+  const usedSeries = series ?? fetchedSeries ?? ((defaultPayload.series as unknown) as Highcharts.SeriesOptionsType[]);
 
   const options: Highcharts.Options = {
     chart: { type: "line" },
     title: { text: title ?? "Line Chart" },
-    xAxis: { categories: usedCategories },
+    xAxis: { categories: (usedCategories as unknown) as string[] },
     yAxis: { title: { text: "Value" } },
     plotOptions: {
       line: { dataLabels: { enabled: true }, enableMouseTracking: true },

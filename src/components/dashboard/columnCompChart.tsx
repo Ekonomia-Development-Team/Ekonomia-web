@@ -34,7 +34,7 @@ interface CountryMeta {
   name: string;
   color?: string;
   ucCode?: string;
-  [k: string]: any;
+  [k: string]: unknown;
 }
 
 interface ColumnCompChartProps {
@@ -67,12 +67,15 @@ const ColumnCompChart: React.FC<ColumnCompChartProps> = ({
     return c;
   }, [countries]);
 
-  const defaultGetData = (d: Array<[string, number]>, c = localCountries) =>
-    d.map(([key, val]) => ({
-      name: key,
-      y: val,
-      color: c[key]?.color,
-    }));
+  const defaultGetData = React.useCallback(
+    (d: Array<[string, number]>, c = localCountries): Highcharts.PointOptionsObject[] =>
+      d.map(([key, val]) => ({
+        name: key,
+        y: val,
+        color: (c[key] as CountryMeta | undefined)?.color as Highcharts.ColorString | undefined,
+      })),
+    [localCountries]
+  );
 
   const computedSeries = useMemo<Highcharts.SeriesOptionsType[] | null>(() => {
     
@@ -106,7 +109,7 @@ const ColumnCompChart: React.FC<ColumnCompChartProps> = ({
         type: "column" as const,
       },
     ];
-  }, [series, data, activeYear, getData, localCountries]);
+  }, [series, data, activeYear, getData, localCountries, defaultGetData]);
 
  
   if (!computedSeries) {
@@ -116,23 +119,28 @@ const ColumnCompChart: React.FC<ColumnCompChartProps> = ({
   const options: Highcharts.Options = {
     chart: { type: "column" },
     title: { text: title ?? `Comparison ${activeYear}`, align: "left" },
-    plotOptions: { series: { grouping: false, borderWidth: 0 } },
+    plotOptions: { column: { grouping: false, borderWidth: 0 }, series: { borderWidth: 0 } },
     legend: { enabled: false },
     tooltip: { shared: true },
-    xAxis: {
-      type: "category",
-      accessibility: { description: "Categories" },
-      max: 4,
-      labels: {
-        useHTML: true,
-        animate: true,
-        format: "{chart.options.countries.(value).ucCode}<br>",
-        style: { textAlign: "center" },
+      xAxis: {
+        type: "category",
+        accessibility: { description: "Categories" },
+        max: 4,
+        labels: {
+          useHTML: true,
+          formatter: function () {
+            const axis = (this as Highcharts.AxisLabelsFormatterContextObject).axis;
+            const chart = axis?.chart as unknown as { options?: { countries?: Record<string, CountryMeta> } };
+            const countries = chart?.options?.countries;
+            const label = countries?.[String(this.value)]?.ucCode;
+            return label ? `${label}<br>` : String(this.value);
+          },
+          style: { textAlign: "center" },
+        },
       },
-    },
     yAxis: [{ title: { text: "Value" }, showFirstLabel: false }],
     series: computedSeries,
-    countries: localCountries,
+    // countries metadata is passed via chart.options in runtime (typed as unknown)
   };
 
   return <HighchartsReact highcharts={Highcharts} options={options} />;
