@@ -68,7 +68,7 @@ const LineChart: React.FC<LineChartProps> = ({ title, categories, series, apiEnd
           if (!res.ok) throw new Error("Failed to fetch chart data");
           const data = await res.json();
           if (!cancelled) setFetchedSeries(data);
-        } catch (_err) {
+        } catch {
           if (!cancelled) setFetchedSeries([]);
         }
       }

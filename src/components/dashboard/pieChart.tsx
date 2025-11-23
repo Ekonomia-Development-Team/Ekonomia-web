@@ -31,7 +31,7 @@ const PieChart: React.FC<PieChartProps> = ({ title, series, apiEndpoint }) => {
           if (!res.ok) throw new Error("Failed to fetch chart data");
           const d = await res.json();
           if (!cancelled) setFetchedSeries(d);
-        } catch (_err) {
+        } catch {
           if (!cancelled) setFetchedSeries([]);
         }
       }

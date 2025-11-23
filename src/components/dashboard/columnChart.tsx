@@ -36,7 +36,7 @@ const ColumnChart: React.FC<ColumnChartProps> = ({ title, options, series, apiEn
           if (!res.ok) throw new Error("Failed to fetch chart data");
           const data = await res.json();
           if (!cancelled) setFetchedSeries(data);
-        } catch (_err) {
+        } catch {
           // silently ignore for now, could add error state
           if (!cancelled) setFetchedSeries([]);
         }
