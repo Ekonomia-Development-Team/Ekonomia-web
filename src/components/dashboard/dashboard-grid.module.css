@@ -1,0 +1,54 @@
+.dashboardContainer {
+  width: 100%;
+  min-height: 100vh;
+  background: #f3f4f6;
+  padding: 24px;
+}
+
+.gridLayout {
+  position: relative;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .dashboardContainer {
+    padding: 12px;
+  }
+}
+
+/* Animações suaves */
+.react-grid-item {
+  transition: all 200ms ease;
+  transition-property: left, top, width, height;
+}
+
+.react-grid-item.cssTransforms {
+  transition-property: transform, width, height;
+}
+
+.react-grid-item.resizing {
+  transition: none;
+  z-index: 100;
+}
+
+.react-grid-item.react-draggable-dragging {
+  transition: none;
+  z-index: 100;
+}
+
+.react-grid-item.dropping {
+  visibility: hidden;
+}
+
+.react-grid-item.react-grid-placeholder {
+  background: #667eea;
+  opacity: 0.2;
+  transition-duration: 100ms;
+  z-index: 2;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  -o-user-select: none;
+  user-select: none;
+  border-radius: 12px;
+}
