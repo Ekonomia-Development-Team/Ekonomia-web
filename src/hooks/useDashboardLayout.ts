@@ -105,6 +105,11 @@ export function useDashboardLayout(layoutId?: string) {
   // Debounced save: reduce server load while dragging/resizing
   const saveDebounceRef = useRef<number | null>(null);
   const lastPositionsRef = useRef<GridLayoutItem[] | null>(null);
+  const saveLayoutPositionsRef = useRef(saveLayoutPositions);
+
+  useEffect(() => {
+    saveLayoutPositionsRef.current = saveLayoutPositions;
+  }, [saveLayoutPositions]);
   const saveLayoutPositionsDebounced = useCallback((newPositions: GridLayoutItem[], delay = 600) => {
     if (saveDebounceRef.current) {
       window.clearTimeout(saveDebounceRef.current);
@@ -121,18 +126,20 @@ export function useDashboardLayout(layoutId?: string) {
     const handler = () => {
       if (saveDebounceRef.current) {
         window.clearTimeout(saveDebounceRef.current);
-        if (lastPositionsRef.current) {
-          void saveLayoutPositions(lastPositionsRef.current);
-        }
+        saveDebounceRef.current = null;
+      }
+
+      const pending = lastPositionsRef.current;
+      if (pending && saveLayoutPositionsRef.current) {
+        void saveLayoutPositionsRef.current(pending);
       }
     };
 
     window.addEventListener('beforeunload', handler);
     return () => {
       window.removeEventListener('beforeunload', handler);
-      handler(); // Flush on unmount
     };
-  }, [saveLayoutPositions]);
+  }, []);
 
   // Deletar layout
   const deleteLayout = useCallback(

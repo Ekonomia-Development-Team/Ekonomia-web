@@ -1,15 +1,14 @@
-import Input from "@/components/atom/input";
-import Button from "@/components/atom/button";
-import React from "react";
+import Link from 'next/link';
+import LoginForm from '@/components/forms/login-form';
 
 export default function LoginPage() {
   return (
-    <div className="max-w-md mx-auto p-6">
-      <h1 className="text-2xl font-bold mb-4">Login</h1>
-      <div className="flex flex-col gap-3">
-        <Input type="email" placeholder="Email" />
-        <Input type="password" placeholder="Password" />
-        <Button>Login</Button>
+    <div className="auth-wrapper">
+      <div className="auth-card">
+        <LoginForm />
+        <p style={{ marginTop: '1rem', color: 'rgba(255,255,255,0.6)' }}>
+          Precisa de um acesso? <Link href="/register">Crie uma conta mock</Link>
+        </p>
       </div>
     </div>
   );

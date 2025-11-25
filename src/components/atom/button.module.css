@@ -1,19 +1,50 @@
 .rootButton {
-  padding: 0.5rem 1rem;
-  background: #2563eb; /* blue-600 */
-  color: #fff;
-  border-radius: 9999px;
-  border: none;
+  padding: 0.65rem 1.4rem;
+  background: linear-gradient(120deg, var(--sky-300), var(--teal-300));
+  color: var(--navy-900);
+  font-weight: 600;
+  border-radius: 999px;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background 200ms ease, transform 150ms ease;
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  box-shadow: 0 15px 30px rgba(82, 187, 255, 0.35);
 }
-.rootButton:hover {
-  background: #1e40af; /* blue-800 */
-  transform: translateY(-1px);
+
+.rootButton:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
 }
+
+.rootButton:hover:not(:disabled) {
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 45px rgba(83, 193, 255, 0.4);
+}
+
+.rootButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
 .secondary {
-  background: #16a34a; /* green-600 */
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: #f5f7ff;
+  box-shadow: none;
 }
-.secondary:hover {
-  background: #15803d;
+
+.secondary:hover:not(:disabled) {
+  filter: brightness(1.1);
+}
+
+.ghost {
+  background: transparent;
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #e8edff;
+  box-shadow: none;
+}
+
+.ghost:hover:not(:disabled) {
+  border-color: var(--sky-300);
+  color: var(--sky-200);
 }

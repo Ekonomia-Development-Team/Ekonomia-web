@@ -1,22 +1,8 @@
 
 import styles from "./input.module.css";
 
-type Props = {
-  type?: string;
-  placeholder?: string;
-  value?: string;
-  onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  className?: string;
-};
+type Props = React.InputHTMLAttributes<HTMLInputElement>;
 
-export default function Input({ type = "text", placeholder = "", value = "", onChange, className = "" }: Props) {
-  return (
-    <input
-      type={type}
-      placeholder={placeholder}
-      value={value}
-      onChange={onChange}
-      className={`${styles.input} ${className}`}
-    />
-  );
+export default function Input({ className = '', ...props }: Props) {
+  return <input className={`${styles.input} ${className}`} {...props} />;
 }

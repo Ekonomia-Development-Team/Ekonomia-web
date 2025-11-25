@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import { Plus, Save, Settings, Layout as LayoutIcon } from 'lucide-react';
 import DashboardGrid from '@/components/dashboard/dashboard-grid';
 import WidgetCard from '@/components/dashboard/widget-card';
@@ -12,6 +12,7 @@ import {
 } from '@/components/dashboard/preset-widgets';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { GridLayoutItem } from '@/types/dashboard.types';
+import { triggerMockAction } from '@/lib/mock-notify';
 import styles from './customizable-dashboard.module.css';
 
 export default function CustomizableDashboard() {
@@ -24,7 +25,54 @@ export default function CustomizableDashboard() {
     saveLayoutPositionsDebounced,
     createLayout,
     removeWidget,
+    addWidget,
   } = useDashboardLayout();
+  const handleAddWidgetClick = async () => {
+    if (!layout) {
+      triggerMockAction({
+        title: 'Crie um layout primeiro',
+        description: 'Salve o layout padrão para liberar a adição de widgets.',
+        intent: 'warning',
+      });
+      return;
+    }
+
+    const layoutKey = `custom-${Date.now()}`;
+
+    try {
+      await addWidget({
+        widgetType: 'custom',
+        config: {
+          title: `Widget ${layout.widgets.length + 1}`,
+          layoutKey,
+        },
+      });
+
+      const fallbackPosition: GridLayoutItem = {
+        i: layoutKey,
+        x: 0,
+        y: layout.layout.length,
+        w: 4,
+        h: 2,
+        minW: 2,
+        minH: 2,
+      };
+
+      await saveLayoutPositions([...(layout.layout ?? []), fallbackPosition]);
+
+      triggerMockAction({
+        title: 'Widget mock adicionado',
+        description: 'Arraste o novo card para posicioná-lo.',
+        intent: 'success',
+      });
+    } catch (err) {
+      console.error('Erro ao adicionar widget:', err);
+      triggerMockAction({
+        title: 'Não foi possível adicionar',
+        description: 'Tente novamente ou reinicie o layout.',
+      });
+    }
+  };
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -90,7 +138,7 @@ export default function CustomizableDashboard() {
           layout: currentLayout,
           widgets: currentLayout.map((item) => ({
             widgetType: 'chart',
-            config: { title: item.i },
+            config: { title: item.i, layoutKey: item.i },
           })),
         });
       }
@@ -100,9 +148,28 @@ export default function CustomizableDashboard() {
     }
   };
 
-  const handleRemoveWidget = async (widgetId: string) => {
+  const widgetIdByLayoutKey = useMemo(() => {
+    if (!layout) return new Map<string, string>();
+    return layout.widgets.reduce((acc, widget) => {
+      const key =
+        widget.id ||
+        (typeof widget.config?.layoutKey === 'string' ? widget.config.layoutKey : undefined);
+      if (key) {
+        acc.set(key, widget.id);
+      }
+      return acc;
+    }, new Map<string, string>());
+  }, [layout]);
+
+  const handleRemoveWidget = async (layoutKey: string) => {
+    if (!layout) {
+      console.warn('Nenhum layout persistido para remover widgets.');
+      return;
+    }
+
     if (window.confirm('Tem certeza que deseja remover este widget?')) {
       try {
+        const widgetId = widgetIdByLayoutKey.get(layoutKey) ?? layoutKey;
         await removeWidget(widgetId);
       } catch (err) {
         console.error('Erro ao remover widget:', err);
@@ -203,7 +270,7 @@ export default function CustomizableDashboard() {
           </button>
 
           {isEditMode && (
-            <button className={styles.toolbarButtonPrimary}>
+            <button className={styles.toolbarButtonPrimary} onClick={handleAddWidgetClick}>
               <Plus size={18} />
               Adicionar Widget
             </button>
