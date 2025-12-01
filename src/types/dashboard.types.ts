@@ -17,11 +17,13 @@ export interface GridLayoutItem {
 
 export type WidgetType = 'chart' | 'summary' | 'goal' | 'transaction-list' | 'account-balance' | 'custom';
 
+type ChartKind = 'line' | 'bar' | 'pie' | 'area' | 'doughnut';
+
 export interface WidgetConfig {
   title?: string;
   description?: string;
   chartId?: string;
-  chartType?: 'line' | 'bar' | 'pie' | 'area' | 'doughnut';
+  chartType?: ChartKind | Uppercase<ChartKind>;
   refreshInterval?: number; // em segundos
   showHeader?: boolean;
   showFooter?: boolean;

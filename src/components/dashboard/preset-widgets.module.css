@@ -1,0 +1,81 @@
+.goalWidget {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.goalItem {
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.02);
+  box-shadow: 0 12px 30px rgba(7, 10, 24, 0.35);
+}
+
+.goalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.goalTitle {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.goalDue {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(248, 250, 252, 0.65);
+}
+
+.goalValue {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--sky-200, #bae6fd);
+}
+
+.progressBar {
+  margin: 14px 0 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--teal-300, #5eead4);
+  transition: width 0.3s ease;
+}
+
+.goalMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.goalStat {
+  display: flex;
+  flex-direction: column;
+  min-width: 120px;
+}
+
+.goalStatLabel {
+  font-size: 0.75rem;
+  color: rgba(241, 245, 249, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.goalStatValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #f8fafc;
+}

@@ -7,6 +7,7 @@
   flex-direction: column;
   height: 100%;
   transition: all 0.3s ease;
+  position: relative;
 }
 
 .widgetCard:hover {
@@ -72,6 +73,49 @@
   padding: 18px;
   flex: 1;
   overflow: auto;
+}
+
+.srOnly {
+  border: 0;
+  clip: rect(0 0 0 0);
+  height: 1px;
+  width: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+}
+
+:global(.widget-drag-handle) {
+  cursor: grab;
+}
+
+:global(.widget-drag-handle:active) {
+  cursor: grabbing;
+}
+
+.widgetQuickActions {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  gap: 8px;
+  padding: 4px 6px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(6px);
+  z-index: 3;
+}
+
+.dragHandleOverlay {
+  position: absolute;
+  top: 6px;
+  left: 12px;
+  right: 12px;
+  height: 18px;
+  border-radius: 999px;
+  z-index: 2;
 }
 
 /* Estilos para indicador de drag */

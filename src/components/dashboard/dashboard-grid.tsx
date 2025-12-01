@@ -1,9 +1,8 @@
 // Componente principal do Grid de Dashboard
 'use client';
 
-import React, { useState, useCallback, useEffect, memo } from 'react';
+import React, { useState, useCallback, useEffect, memo, useMemo } from 'react';
 import { Responsive, WidthProvider, Layout } from 'react-grid-layout';
-import WidgetCard from './widget-card';
 import { GridLayoutItem } from '@/types/dashboard.types';
 import 'react-grid-layout/css/styles.css';
 import 'react-resizable/css/styles.css';
@@ -11,12 +10,21 @@ import styles from './dashboard-grid.module.css';
 
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
+const normalizeKey = (key: React.Key | null): string => {
+  if (key == null) return '';
+  const normalized = typeof key === 'string' ? key : String(key);
+  if (normalized.startsWith('.$')) return normalized.slice(2);
+  if (normalized.startsWith('$')) return normalized.slice(1);
+  if (normalized.startsWith('.')) return normalized.slice(1);
+  return normalized;
+};
+
 interface DashboardGridProps {
   layouts: GridLayoutItem[];
   onLayoutChange?: (layout: GridLayoutItem[]) => void;
   onRemoveWidget?: (widgetId: string) => void;
   isEditable?: boolean;
-  children: React.ReactNode[];
+  children: React.ReactNode;
 }
 
 function DashboardGrid({
@@ -27,6 +35,17 @@ function DashboardGrid({
   children,
 }: DashboardGridProps) {
   const [currentLayouts, setCurrentLayouts] = useState<GridLayoutItem[]>(layouts);
+
+  const childArray = useMemo(() => React.Children.toArray(children), [children]);
+  const keyedChildren = useMemo(() => {
+    const map = new Map<string, React.ReactNode>();
+    childArray.forEach((child) => {
+      if (React.isValidElement(child) && child.key !== null) {
+        map.set(normalizeKey(child.key), child);
+      }
+    });
+    return map;
+  }, [childArray]);
 
   // If the parent provides a new layout, sync local state so that
   // external updates are reflected in the grid UI (e.g. when a layout loads)
@@ -57,6 +76,38 @@ function DashboardGrid({
     [onLayoutChange]
   );
 
+  const renderChildForItem = useCallback(
+    (layoutItem: GridLayoutItem, index: number) => {
+      const candidate = (keyedChildren.get(layoutItem.i) ?? childArray[index]) as React.ReactNode;
+      if (!React.isValidElement(candidate)) {
+        return candidate ?? null;
+      }
+
+      type WidgetChildProps = {
+        id?: string;
+        onRemove?: (id: string) => void;
+      };
+
+      const childProps = candidate.props as WidgetChildProps;
+      const extraProps: WidgetChildProps = {};
+
+      if (childProps.id == null) {
+        extraProps.id = layoutItem.i;
+      }
+
+      if (isEditable && onRemoveWidget && !childProps.onRemove) {
+        extraProps.onRemove = onRemoveWidget;
+      }
+
+      if (Object.keys(extraProps).length === 0) {
+        return candidate;
+      }
+
+      return React.cloneElement(candidate, extraProps);
+    },
+    [childArray, keyedChildren, isEditable, onRemoveWidget]
+  );
+
   return (
     <div className={styles.dashboardContainer}>
       <ResponsiveGridLayout
@@ -68,19 +119,14 @@ function DashboardGrid({
         isDraggable={isEditable}
         isResizable={isEditable}
         onLayoutChange={handleLayoutChange}
-        draggableHandle=".widgetHeader"
+        draggableHandle=".widget-drag-handle"
         containerPadding={[16, 16]}
         margin={[16, 16]}
         useCSSTransforms={true}
       >
         {currentLayouts.map((layoutItem, index) => (
           <div key={layoutItem.i} data-grid={layoutItem}>
-            <WidgetCard
-              id={layoutItem.i}
-              onRemove={isEditable ? onRemoveWidget : undefined}
-            >
-              {children[index]}
-            </WidgetCard>
+            {renderChildForItem(layoutItem, index)}
           </div>
         ))}
       </ResponsiveGridLayout>
