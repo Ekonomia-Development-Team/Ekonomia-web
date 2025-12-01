@@ -17,7 +17,13 @@ import {
 } from '@/components/dashboard/preset-widgets';
 import { useDashboardLayout } from '@/hooks/useDashboardLayout';
 import { useCharts } from '@/hooks/useCharts';
-import { GridLayoutItem, WidgetType, DashboardWidget, ChartData } from '@/types/dashboard.types';
+import {
+  GridLayoutItem,
+  WidgetType,
+  DashboardWidget,
+  ChartData,
+  ManualChartData,
+} from '@/types/dashboard.types';
 import { triggerMockAction } from '@/lib/mock-notify';
 import styles from './customizable-dashboard.module.css';
 
@@ -33,6 +39,7 @@ type DraftWidgetConfig = {
   title: string;
   chartId?: string;
   chartType?: ChartData['type'];
+  manualChartData?: ManualChartData;
 };
 
 type ChartWidgetType = 'line' | 'bar' | 'pie' | 'area' | 'column' | 'spline';
@@ -52,30 +59,36 @@ const normalizeChartWidgetType = (
   const upper = type.toUpperCase() as ChartData['type'];
   return CHART_TYPE_MAP[upper] ?? 'line';
 };
+type ChartRenderable = Pick<ManualChartData, 'title' | 'type' | 'dataPoints'>;
 
-const buildSeriesFromChartData = (
-  chart: ChartData
+const buildSeriesFromChartSource = (
+  chart: ChartRenderable
 ): { series: SeriesOptionsType[]; categories?: string[] } => {
   const normalizedType = chart.type?.toUpperCase() as ChartData['type'];
+  const normalizedPoints = chart.dataPoints.map((point) => ({
+    label: point.label,
+    value: point.value,
+  }));
+
   if (normalizedType === 'PIE' || normalizedType === 'DOUGHNUT') {
     return {
       series: [
         {
           type: 'pie',
           name: chart.title,
-          data: chart.dataPoints.map((point) => ({ name: point.label, y: point.value })),
+          data: normalizedPoints.map((point) => ({ name: point.label, y: point.value })),
         } as SeriesOptionsType,
       ],
     };
   }
 
   return {
-    categories: chart.dataPoints.map((point) => point.label),
+    categories: normalizedPoints.map((point) => point.label),
     series: [
       {
         type: normalizeChartWidgetType(normalizedType),
         name: chart.title,
-        data: chart.dataPoints.map((point) => point.value),
+        data: normalizedPoints.map((point) => point.value),
       } as SeriesOptionsType,
     ],
   };
@@ -150,9 +163,10 @@ export default function CustomizableDashboard() {
   }, []);
 
   const handleAddWidget = useCallback(
-    async (options?: { chart?: ChartData }) => {
+    async (options?: { chart?: ChartData; manualChart?: ManualChartData }) => {
       const layoutKey = `custom-${Date.now()}`;
-      const nextWidgetTitle = options?.chart?.title ?? `Widget ${clientLayout.length + 1}`;
+      const nextWidgetTitle =
+        options?.chart?.title ?? options?.manualChart?.title ?? `Widget ${clientLayout.length + 1}`;
       const fallbackPosition = calculateNextPosition(clientLayout, layoutKey);
       const updatedLayout = [...clientLayout, fallbackPosition];
 
@@ -162,7 +176,8 @@ export default function CustomizableDashboard() {
         [layoutKey]: {
           title: nextWidgetTitle,
           chartId: options?.chart?.id,
-          chartType: options?.chart?.type,
+          chartType: options?.chart?.type ?? options?.manualChart?.type,
+          manualChartData: options?.manualChart,
         },
       }));
       setHasUnsavedChanges(true);
@@ -178,13 +193,14 @@ export default function CustomizableDashboard() {
 
       try {
         await addWidget({
-          widgetType: options?.chart ? 'chart' : 'custom',
+          widgetType: options?.chart || options?.manualChart ? 'chart' : 'custom',
           chartId: options?.chart?.id,
           config: {
             title: nextWidgetTitle,
             layoutKey,
             chartId: options?.chart?.id,
-            chartType: options?.chart?.type,
+            chartType: options?.chart?.type ?? options?.manualChart?.type,
+            manualChartData: options?.manualChart,
           },
         });
 
@@ -225,6 +241,14 @@ export default function CustomizableDashboard() {
     setIsWidgetLibraryOpen(false);
     void handleAddWidget();
   }, [handleAddWidget]);
+
+  const handleCreateManualChart = useCallback(
+    (manualChart: ManualChartData) => {
+      setIsWidgetLibraryOpen(false);
+      void handleAddWidget({ manualChart });
+    },
+    [handleAddWidget]
+  );
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -343,14 +367,16 @@ export default function CustomizableDashboard() {
 
           const draftConfig = draftWidgetConfigs[item.i];
           const isChartWidget = Boolean(draftConfig?.chartId);
+          const hasManualChart = Boolean(draftConfig?.manualChartData);
           return {
-            widgetType: (isChartWidget ? 'chart' : 'custom') as WidgetType,
+            widgetType: (isChartWidget || hasManualChart ? 'chart' : 'custom') as WidgetType,
             chartId: draftConfig?.chartId,
             config: {
               title: draftConfig?.title ?? `Widget ${index + 1}`,
               layoutKey: item.i,
               chartId: draftConfig?.chartId,
-              chartType: draftConfig?.chartType,
+              chartType: draftConfig?.chartType ?? draftConfig?.manualChartData?.type,
+              manualChartData: draftConfig?.manualChartData,
             },
           };
         });
@@ -572,15 +598,28 @@ export default function CustomizableDashboard() {
         (typeof resolvedWidget?.config?.chartId === 'string' ? resolvedWidget.config.chartId : undefined) ??
         resolvedWidget?.chartId;
       const resolvedChart = resolvedChartId ? chartMap.get(resolvedChartId) : undefined;
+      const inlineManualChart =
+        draftConfig?.manualChartData ??
+        (resolvedWidget?.config?.manualChartData as ManualChartData | undefined);
 
       let cardContent: React.ReactNode;
 
       if (resolvedChart) {
-        const { series, categories } = buildSeriesFromChartData(resolvedChart);
+        const { series, categories } = buildSeriesFromChartSource(resolvedChart);
         cardContent = (
           <ChartWidget
             chartType={normalizeChartWidgetType(resolvedChart.type)}
             title={resolvedChart.title}
+            series={series}
+            categories={categories}
+          />
+        );
+      } else if (inlineManualChart) {
+        const { series, categories } = buildSeriesFromChartSource(inlineManualChart);
+        cardContent = (
+          <ChartWidget
+            chartType={normalizeChartWidgetType(inlineManualChart.type)}
+            title={inlineManualChart.title}
             series={series}
             categories={categories}
           />
@@ -693,6 +732,7 @@ export default function CustomizableDashboard() {
         onClose={handleCloseWidgetLibrary}
         onSelectChart={handleSelectChartFromLibrary}
         onCreateBlank={handleCreateBlankWidget}
+        onCreateManualChart={handleCreateManualChart}
       />
     </div>
   );

@@ -19,11 +19,22 @@ export type WidgetType = 'chart' | 'summary' | 'goal' | 'transaction-list' | 'ac
 
 type ChartKind = 'line' | 'bar' | 'pie' | 'area' | 'doughnut';
 
+export interface ManualChartData {
+  title: string;
+  type: ChartData['type'];
+  description?: string;
+  dataPoints: Array<{
+    label: string;
+    value: number;
+  }>;
+}
+
 export interface WidgetConfig {
   title?: string;
   description?: string;
   chartId?: string;
   chartType?: ChartKind | Uppercase<ChartKind>;
+  manualChartData?: ManualChartData;
   refreshInterval?: number; // em segundos
   showHeader?: boolean;
   showFooter?: boolean;

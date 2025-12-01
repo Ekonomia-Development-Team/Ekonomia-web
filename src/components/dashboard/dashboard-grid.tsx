@@ -35,6 +35,7 @@ function DashboardGrid({
   children,
 }: DashboardGridProps) {
   const [currentLayouts, setCurrentLayouts] = useState<GridLayoutItem[]>(layouts);
+  const containerClassName = `${styles.dashboardContainer} ${isEditable ? styles.editMode : ''}`.trim();
 
   const childArray = useMemo(() => React.Children.toArray(children), [children]);
   const keyedChildren = useMemo(() => {
@@ -109,7 +110,7 @@ function DashboardGrid({
   );
 
   return (
-    <div className={styles.dashboardContainer}>
+    <div className={containerClassName}>
       <ResponsiveGridLayout
         className={styles.gridLayout}
         layouts={{ lg: currentLayouts }}
@@ -118,6 +119,7 @@ function DashboardGrid({
         rowHeight={80}
         isDraggable={isEditable}
         isResizable={isEditable}
+        resizeHandles={['se']}
         onLayoutChange={handleLayoutChange}
         draggableHandle=".widget-drag-handle"
         containerPadding={[16, 16]}
